@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  googleId  String   @unique
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  slack     SlackConnection?
+  campaigns Campaign[]
+  emails    Email[]
+}
+
+/// One Slack incoming-webhook per user, created through the OAuth v2 flow.
+model SlackConnection {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId      String
+  teamName    String
+  channel     String
+  webhookUrl  String
+  connectedAt DateTime @default(now())
+}
+
+/// Ethereal SMTP accounts we send from. Emails in a campaign are spread round-robin across them.
+model Sender {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  smtpHost  String
+  smtpPort  Int
+  smtpUser  String
+  smtpPass  String
+  createdAt DateTime @default(now())
+
+  emails Email[]
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  body        String
+  startAt     DateTime
+  delayMs     Int
+  hourlyLimit Int
+  createdAt   DateTime @default(now())
+
+  emails Email[]
+}
+
+enum EmailStatus {
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+model Email {
+  id            String      @id @default(uuid())
+  campaignId    String
+  campaign      Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        Sender      @relation(fields: [senderId], references: [id])
+  /// Position inside the campaign; used to keep order when jobs get pushed to the next hour.
+  seq           Int
+  recipient     String
+  subject       String
+  body          String
+  scheduledAt   DateTime
+  status        EmailStatus @default(SCHEDULED)
+  sentAt        DateTime?
+  failedReason  String?
+  messageId     String?
+  previewUrl    String?
+  rescheduleCount Int       @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([campaignId, recipient])
+  @@index([userId, status, scheduledAt])
+  @@index([status, updatedAt])
+}

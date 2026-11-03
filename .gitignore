@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.log
+.DS_Store
+
+# secrets: only the *.example files are committed
+.env
+.env.*
+!.env.example
