@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { env, isProd } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { HttpError } from '../middleware/error.js';
-import { clearSessionCookie, requireAuth, setSessionCookieReturnToken } from '../middleware/auth.js';
+import { clearSessionCookie, requireAuth, setSessionCookie, setSessionCookieReturnToken } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
