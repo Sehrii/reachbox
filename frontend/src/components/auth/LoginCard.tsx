@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { api, errorMessage, googleLoginUrl } from "@/lib/api";
+import { api, errorMessage, getGoogleLoginUrl } from "@/lib/api";
 import { useMe, meQueryKey } from "@/hooks/useAuth";
 import { isEmail } from "@/lib/parseEmails";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -64,7 +64,7 @@ export function LoginCard() {
     <div className="w-full max-w-[326px] rounded-xl border border-line bg-white px-9 pt-9 pb-8">
       <h1 className="mb-5 text-center text-[26px] font-bold text-ink">Login</h1>
 
-      <a href={googleLoginUrl} className={buttonClasses({ variant: "soft", size: "lg", className: "w-full font-normal" })}>
+      <a href={getGoogleLoginUrl()} className={buttonClasses({ variant: "soft", size: "lg", className: "w-full font-normal" })}>
         <GoogleIcon />
         Login with Google
       </a>

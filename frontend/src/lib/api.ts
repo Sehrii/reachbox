@@ -11,7 +11,13 @@ import type {
   SlackStatus,
 } from "@/types/api";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+function getApiUrl(): string {
+	return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+}
+
+export function apiUrl(path: string = ""): string {
+	return `${getApiUrl()}${path}`;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -31,7 +37,7 @@ function messageFrom(body: ApiErrorBody | null, status: number): string {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${apiUrl(path)}`, {
       ...init,
       credentials: "include",
       headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
@@ -67,8 +73,12 @@ export const api = {
 };
 
 /** OAuth flows are full-page navigations, not fetches. */
-export const googleLoginUrl = `${API_URL}/auth/google`;
-export const slackConnectUrl = `${API_URL}/api/slack/connect`;
+export function getGoogleLoginUrl(): string {
+	return apiUrl("/auth/google");
+}
+export function getSlackConnectUrl(): string {
+	return apiUrl("/api/slack/connect");
+}
 
 export const errorMessage = (err: unknown) =>
   err instanceof Error ? err.message : "Something went wrong";

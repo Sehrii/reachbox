@@ -3,7 +3,7 @@
 import { ChevronDown, LogOut, Send, Unplug } from "lucide-react";
 import { useLogout, useMe } from "@/hooks/useAuth";
 import { useSlackDisconnect, useSlackStatus, useSlackTest } from "@/hooks/useSlack";
-import { slackConnectUrl } from "@/lib/api";
+import { getSlackConnectUrl } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/Avatar";
 import { Popover } from "@/components/ui/Popover";
@@ -63,7 +63,7 @@ export function UserMenu() {
             </>
           ) : (
             <a
-              href={slackConnectUrl}
+              href={getSlackConnectUrl()}
               className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-ink hover:bg-surface"
             >
               <SlackIcon />
