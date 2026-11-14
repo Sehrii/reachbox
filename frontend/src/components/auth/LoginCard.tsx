@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { api, errorMessage, getGoogleLoginUrl } from "@/lib/api";
+import { api, errorMessage, getGoogleLoginUrl, setToken } from "@/lib/api";
 import { useMe, meQueryKey } from "@/hooks/useAuth";
 import { isEmail } from "@/lib/parseEmails";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -50,7 +50,10 @@ export function LoginCard() {
     }
     setSubmitting(true);
     try {
-      await api.devLogin(email.trim());
+      const result = await api.devLogin(email.trim());
+      if (result && typeof result === "object" && "token" in result) {
+        setToken(result.token as string);
+      }
       await queryClient.invalidateQueries({ queryKey: meQueryKey });
       router.replace("/dashboard");
     } catch (err) {

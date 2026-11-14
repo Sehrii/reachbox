@@ -14,8 +14,13 @@ declare global {
   }
 }
 
-export function setSessionCookie(res: Response, userId: string): void {
+export function setSessionCookieReturnToken(userId: string): string {
   const token = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: SESSION_TTL_S });
+  return token;
+}
+
+export function setSessionCookie(res: Response, userId: string): void {
+  const token = setSessionCookieReturnToken(userId);
   res.cookie(AUTH_COOKIE, token, {
     httpOnly: true,
     secure: isProd,

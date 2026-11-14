@@ -34,13 +34,37 @@ function messageFrom(body: ApiErrorBody | null, status: number): string {
   return firstDetail ? `${firstDetail[0]}: ${firstDetail[1]![0]}` : body.error;
 }
 
+const AUTH_STORAGE_KEY = "rb_token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(AUTH_STORAGE_KEY);
+}
+
+export function setToken(token: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(AUTH_STORAGE_KEY, token);
+  }
+}
+
+export function clearToken(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
+  const token = getToken();
   try {
     res = await fetch(`${apiUrl(path)}`, {
       ...init,
       credentials: "include",
-      headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
+      headers: {
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...init.headers,
+      },
     });
   } catch {
     throw new ApiError(0, "Can't reach the server. Is the API running?");

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { env, isProd } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { HttpError } from '../middleware/error.js';
-import { clearSessionCookie, requireAuth, setSessionCookie } from '../middleware/auth.js';
+import { clearSessionCookie, requireAuth, setSessionCookieReturnToken } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
@@ -75,8 +75,8 @@ authRouter.get('/google/callback', async (req, res) => {
     update: profile,
   });
 
-  setSessionCookie(res, user.id);
-  res.redirect(`${env.FRONTEND_URL}/dashboard`);
+  const token = setSessionCookieReturnToken(user.id);
+  res.redirect(`${env.FRONTEND_URL}/dashboard?token=${encodeURIComponent(token)}`);
 });
 
 /** Local testing without Google credentials. Disabled unless ENABLE_DEV_LOGIN=true and not in production. */
@@ -88,8 +88,9 @@ authRouter.post('/dev-login', async (req, res) => {
     create: { googleId: `dev:${body.email}`, email: body.email, name: body.name ?? body.email },
     update: {},
   });
+  const token = setSessionCookieReturnToken(user.id);
   setSessionCookie(res, user.id);
-  res.json({ user });
+  res.json({ user, token });
 });
 
 authRouter.get('/me', requireAuth, async (req, res) => {
