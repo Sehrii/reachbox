@@ -31,6 +31,9 @@ const schema = z.object({
   MAX_EMAILS_PER_HOUR_PER_SENDER: z.coerce.number().int().min(1).default(200),
   SENDER_COUNT: z.coerce.number().int().min(1).default(3),
   ETHEREAL_SENDERS: z.string().optional().default(''),
+  SMTP_HOST: z.string().optional().default(''),
+  SMTP_PORT: z.coerce.number().int().optional().default(587),
+  SMTP_SECURE: bool,
 });
 
 const parsed = schema.safeParse(process.env);

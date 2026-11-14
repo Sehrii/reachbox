@@ -71,6 +71,10 @@ This guide walks you through deploying the Reachbox app to [Render](https://rend
    | `RUN_WORKER_IN_API` | `true` |
    | `GOOGLE_CLIENT_ID` | *(your Google OAuth client ID)* |
    | `GOOGLE_CLIENT_SECRET` | *(your Google OAuth client secret)* |
+   | `SMTP_HOST` | *(your SMTP server, e.g. `smtp.gmail.com`)* |
+   | `SMTP_PORT` | `587` (or `465` for SSL) |
+   | `SMTP_SECURE` | `false` (or `true` for port 465) |
+   | `ETHEREAL_SENDERS` | *(your SMTP login, format: `email:password`)* |
 
 5. Click **Create Web Service**.
 
@@ -125,9 +129,62 @@ IN THE
 
 ---
 
+## Configuring Email Sending (Required for Production)
+
+By default, the app uses **Ethereal**, a test-only SMTP service. Ethereal emails are **not delivered** to real recipients, and the connection may time out on Render. You **must** configure a real SMTP provider for emails to actually send.
+
+### Option 1: Gmail (Recommended for small scale)
+
+1. Enable **2-Step Verification** on your Google account.
+2. Generate an **App Password**: Go to [Google Account → Security → App Passwords](https://myaccount.google.com/apppasswords).
+3. Set these environment variables on Render:
+
+| Key | Value |
+|---|---|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `ETHEREAL_SENDERS` | `your-email@gmail.com:your-app-password` |
+
+### Option 2: SendGrid (Free tier: 100 emails/day)
+
+1. Sign up at [sendgrid.com](https://sendgrid.com).
+2. Create an **API Key** with "Mail Send" permissions.
+3. Set these environment variables:
+
+| Key | Value |
+|---|---|
+| `SMTP_HOST` | `smtp.sendgrid.net` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `ETHEREAL_SENDERS` | `apikey:your-sendgrid-api-key` |
+
+### Option 3: Mailgun (Free tier: 5,000 emails/month)
+
+1. Sign up at [mailgun.com](https://mailgun.com).
+2. Get your SMTP credentials from the Mailgun dashboard.
+3. Set these environment variables:
+
+| Key | Value |
+|---|---|
+| `SMTP_HOST` | `smtp.mailgun.org` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `ETHEREAL_SENDERS` | `postmaster@your-domain.mailgun.org:your-smtp-password` |
+
+### Important: Clear existing senders after changing SMTP
+
+The app creates sender accounts on first boot and reuses them on subsequent deploys. If you change SMTP settings after the first deploy, you need to clear the existing sender accounts:
+
+1. Go to your Render PostgreSQL database → **Connect to database**
+2. Run: `DELETE FROM sender;`
+3. Restart the backend service — it will create new senders with your updated SMTP settings
+
+---
+
 ## Important Notes
 
 - **Free tier limitations**: Render free services sleep after 15 minutes of inactivity. The first request after sleep takes ~30-60 seconds to wake up.
 - **Database migrations**: The `npm run db:deploy` in the start command ensures migrations run on each deploy.
-- **Ethereal email**: The app uses Ethereal for email sending by default. In production, you may want to configure real SMTP credentials via the `ETHEREAL_SENDERS` env var.
+- **Email sending**: You must configure a real SMTP provider (Gmail, SendGrid, Mailgun) via `SMTP_HOST` and `ETHEREAL_SENDERS` env vars. Ethereal test emails will not be delivered.
 - **Elasticsearch**: Not required — the app falls back to PostgreSQL ILIKE search when `ELASTICSEARCH_URL` is empty.

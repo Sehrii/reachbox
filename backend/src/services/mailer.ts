@@ -13,6 +13,9 @@ function transporterFor(sender: Sender): Transporter {
       auth: { user: sender.smtpUser, pass: sender.smtpPass },
       pool: true,
       maxConnections: 2,
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
     transporters.set(sender.id, t);
   }

@@ -7,9 +7,13 @@ import { logger } from '../lib/logger.js';
 const ETHEREAL_HOST = 'smtp.ethereal.email';
 const ETHEREAL_PORT = 587;
 
-/** Seeds Ethereal sender accounts on first boot; existing rows are left alone. */
+/** Seeds sender accounts on first boot; existing rows are left alone. */
 export async function ensureSenders(): Promise<void> {
   if ((await prisma.sender.count()) > 0) return;
+
+  const useCustomSmtp = env.SMTP_HOST.length > 0;
+  const smtpHost = useCustomSmtp ? env.SMTP_HOST : ETHEREAL_HOST;
+  const smtpPort = useCustomSmtp ? env.SMTP_PORT : ETHEREAL_PORT;
 
   const provided = env.ETHEREAL_SENDERS.split(',')
     .map((s) => s.trim())
@@ -19,7 +23,7 @@ export async function ensureSenders(): Promise<void> {
       return { user: pair.slice(0, idx), pass: pair.slice(idx + 1) };
     });
 
-  const accounts = provided.length
+  const accounts = (provided.length && useCustomSmtp)
     ? provided
     : await Promise.all(
         Array.from({ length: env.SENDER_COUNT }, () => nodemailer.createTestAccount()),
@@ -29,14 +33,19 @@ export async function ensureSenders(): Promise<void> {
     data: accounts.map((a, i) => ({
       email: a.user,
       name: `ReachBox Sender ${i + 1}`,
-      smtpHost: ETHEREAL_HOST,
-      smtpPort: ETHEREAL_PORT,
+      smtpHost,
+      smtpPort,
       smtpUser: a.user,
       smtpPass: a.pass,
     })),
     skipDuplicates: true,
   });
-  logger.info('Seeded Ethereal senders', { count: accounts.length });
+
+  if (useCustomSmtp) {
+    logger.info('Seeded custom SMTP senders', { count: accounts.length, host: smtpHost, port: smtpPort });
+  } else {
+    logger.info('Seeded Ethereal senders', { count: accounts.length });
+  }
 }
 
 export async function listSenders(): Promise<Sender[]> {
